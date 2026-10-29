@@ -1,0 +1,1177 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Divisor de Certificados PDF - Divide y Nombra Automáticamente</title>
+  <meta name="description"
+    content="Herramienta inteligente para dividir PDFs masivos de certificados por participante, extrayendo nombres automáticamente sin sobreescrituras.">
+  <meta name="keywords" content="PDF, certificados, dividir pdf, python, streamlit, pypdf, automatizacion">
+
+  <!-- Open Graph / Meta para compartir -->
+  <meta property="og:title" content="Divisor de Certificados PDF - Streamlit & Python">
+  <meta property="og:description"
+    content="Divide documentos masivos en certificados individuales organizados por nombre de participante en segundos.">
+  <meta property="og:type" content="website">
+
+  <!-- Favicon SVG -->
+  <link rel="icon"
+    href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📄</text></svg>">
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap"
+    rel="stylesheet">
+
+  <style>
+    :root {
+      --primary: #FF4B4B;
+      --primary-hover: #E03535;
+      --primary-gradient: linear-gradient(135deg, #FF4B4B 0%, #E60023 55%, #8B0000 100%);
+      --accent: #FF7676;
+      --bg: #090D16;
+      --bg-card: rgba(22, 28, 45, 0.75);
+      --bg-card-hover: rgba(30, 41, 59, 0.85);
+      --border: rgba(255, 255, 255, 0.08);
+      --border-focus: rgba(255, 75, 75, 0.5);
+      --text: #F8FAFC;
+      --text-muted: #94A3B8;
+      --radius: 16px;
+      --radius-sm: 10px;
+      --shadow-glow: 0 0 50px -10px rgba(255, 75, 75, 0.28);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      overflow-x: hidden;
+      min-height: 100vh;
+      background-image:
+        radial-gradient(circle at 15% 15%, rgba(255, 75, 75, 0.12) 0%, transparent 40%),
+        radial-gradient(circle at 85% 65%, rgba(230, 0, 35, 0.08) 0%, transparent 45%),
+        radial-gradient(circle at 50% 90%, rgba(59, 130, 246, 0.05) 0%, transparent 40%);
+      background-attachment: fixed;
+    }
+
+    /* Navegación */
+    .navbar {
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      background: rgba(9, 13, 22, 0.8);
+      border-bottom: 1px solid var(--border);
+      padding: 1.1rem 2rem;
+    }
+
+    .nav-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      color: var(--text);
+      font-weight: 700;
+      font-size: 1.25rem;
+      letter-spacing: -0.3px;
+    }
+
+    .brand-icon {
+      background: var(--primary-gradient);
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      box-shadow: 0 4px 15px rgba(255, 75, 75, 0.35);
+    }
+
+    .brand span span {
+      color: var(--primary);
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 2rem;
+      align-items: center;
+      list-style: none;
+    }
+
+    .nav-links a {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 0.95rem;
+      font-weight: 500;
+      transition: color 0.2s ease;
+    }
+
+    .nav-links a:hover {
+      color: var(--text);
+    }
+
+    /* Botones */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 0.75rem 1.5rem;
+      border-radius: var(--radius-sm);
+      font-weight: 600;
+      font-size: 0.95rem;
+      text-decoration: none;
+      cursor: pointer;
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      border: none;
+    }
+
+    .btn-primary {
+      background: var(--primary-gradient);
+      color: white;
+      box-shadow: 0 4px 20px rgba(255, 75, 75, 0.4);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(255, 75, 75, 0.55);
+      filter: brightness(1.08);
+    }
+
+    .btn-outline {
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+
+    .btn-outline:hover {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: rgba(255, 255, 255, 0.2);
+      transform: translateY(-2px);
+    }
+
+    .btn-large {
+      padding: 0.95rem 2rem;
+      font-size: 1.05rem;
+      border-radius: 12px;
+    }
+
+    /* Hero Section */
+    .hero {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 5rem 1.5rem 4rem;
+      text-align: center;
+      position: relative;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 0.45rem 1.1rem;
+      border-radius: 999px;
+      background: rgba(255, 75, 75, 0.12);
+      border: 1px solid rgba(255, 75, 75, 0.3);
+      color: #FFA5A5;
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin-bottom: 2rem;
+      letter-spacing: 0.2px;
+      animation: pulse 2.5s infinite;
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        opacity: 1;
+      }
+
+      50% {
+        opacity: 0.75;
+      }
+    }
+
+    .hero h1 {
+      font-size: clamp(2.4rem, 5.5vw, 4.2rem);
+      font-weight: 800;
+      line-height: 1.15;
+      letter-spacing: -1.5px;
+      margin-bottom: 1.5rem;
+      max-width: 950px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .hero h1 .gradient-text {
+      background: linear-gradient(135deg, #FFFFFF 20%, #FF8A8A 60%, #FF4B4B 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero-desc {
+      font-size: clamp(1.05rem, 2vw, 1.25rem);
+      color: var(--text-muted);
+      max-width: 720px;
+      margin: 0 auto 2.5rem;
+      line-height: 1.7;
+    }
+
+    .hero-actions {
+      display: flex;
+      gap: 1.2rem;
+      justify-content: center;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-bottom: 4rem;
+    }
+
+    /* Live Interactive Mockup Card */
+    .mockup-container {
+      max-width: 900px;
+      margin: 0 auto;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-glow), 0 20px 40px rgba(0, 0, 0, 0.4);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      overflow: hidden;
+      text-align: left;
+    }
+
+    .mockup-header {
+      background: rgba(15, 23, 42, 0.8);
+      padding: 0.85rem 1.25rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .mockup-dots {
+      display: flex;
+      gap: 6px;
+    }
+
+    .mockup-dots span {
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+    }
+
+    .dot-red {
+      background: #FF5F56;
+    }
+
+    .dot-yellow {
+      background: #FFBD2E;
+    }
+
+    .dot-green {
+      background: #27C93F;
+    }
+
+    .mockup-url {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      background: rgba(0, 0, 0, 0.3);
+      padding: 4px 14px;
+      border-radius: 6px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .mockup-body {
+      padding: 2.2rem;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+      align-items: center;
+    }
+
+    @media (max-width: 768px) {
+      .mockup-body {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .pdf-input-box {
+      border: 2px dashed rgba(255, 75, 75, 0.4);
+      background: rgba(255, 75, 75, 0.03);
+      border-radius: 12px;
+      padding: 2.2rem 1.5rem;
+      text-align: center;
+      transition: all 0.3s ease;
+    }
+
+    .pdf-input-box:hover {
+      border-color: var(--primary);
+      background: rgba(255, 75, 75, 0.06);
+    }
+
+    .pdf-input-icon {
+      font-size: 2.5rem;
+      margin-bottom: 0.8rem;
+    }
+
+    .file-pipeline {
+      display: flex;
+      flex-direction: column;
+      gap: 0.85rem;
+    }
+
+    .file-item {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border);
+      padding: 0.85rem 1rem;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.9rem;
+      transition: transform 0.2s ease;
+    }
+
+    .file-item:hover {
+      transform: translateX(4px);
+      border-color: rgba(255, 75, 75, 0.4);
+      background: rgba(255, 75, 75, 0.04);
+    }
+
+    .file-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .badge-success {
+      background: rgba(34, 197, 94, 0.15);
+      color: #4ade80;
+      border: 1px solid rgba(34, 197, 94, 0.3);
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 6px;
+    }
+
+    /* Key Metrics */
+    .metrics {
+      max-width: 1200px;
+      margin: 4rem auto;
+      padding: 0 1.5rem;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .metric-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.8rem;
+      text-align: center;
+      transition: transform 0.3s ease;
+    }
+
+    .metric-card:hover {
+      transform: translateY(-4px);
+      border-color: rgba(255, 255, 255, 0.15);
+    }
+
+    .metric-value {
+      font-size: 2.3rem;
+      font-weight: 800;
+      color: var(--primary);
+      margin-bottom: 0.3rem;
+    }
+
+    .metric-label {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      font-weight: 500;
+    }
+
+    /* Features Section */
+    .section {
+      max-width: 1200px;
+      margin: 6rem auto;
+      padding: 0 1.5rem;
+    }
+
+    .section-header {
+      text-align: center;
+      margin-bottom: 3.5rem;
+    }
+
+    .section-subtitle {
+      color: var(--primary);
+      text-transform: uppercase;
+      font-size: 0.85rem;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      margin-bottom: 0.5rem;
+    }
+
+    .section-title {
+      font-size: clamp(2rem, 3.5vw, 2.7rem);
+      font-weight: 800;
+      letter-spacing: -0.8px;
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 1.8rem;
+    }
+
+    .feature-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 2.2rem;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .feature-card:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--border-focus);
+      transform: translateY(-5px);
+      box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
+    }
+
+    .feature-icon-wrapper {
+      width: 52px;
+      height: 52px;
+      background: rgba(255, 75, 75, 0.1);
+      border: 1px solid rgba(255, 75, 75, 0.25);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      margin-bottom: 1.4rem;
+    }
+
+    .feature-card h3 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      margin-bottom: 0.75rem;
+      letter-spacing: -0.3px;
+    }
+
+    .feature-card p {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      line-height: 1.6;
+    }
+
+    /* How It Works Steps */
+    .steps-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 2rem;
+      position: relative;
+    }
+
+    .step-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 2.2rem 1.8rem;
+      position: relative;
+    }
+
+    .step-num {
+      width: 36px;
+      height: 36px;
+      background: var(--primary-gradient);
+      color: white;
+      font-weight: 700;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+      margin-bottom: 1.2rem;
+    }
+
+    .step-card h4 {
+      font-size: 1.15rem;
+      font-weight: 700;
+      margin-bottom: 0.6rem;
+    }
+
+    .step-card p {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+
+    /* Dual Mode Section (Web vs CLI) */
+    .modes-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+      gap: 2rem;
+    }
+
+    .mode-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 2.2rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .mode-badge {
+      display: inline-block;
+      align-self: flex-start;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 1rem;
+    }
+
+    .badge-web {
+      background: rgba(255, 75, 75, 0.15);
+      color: #FF7676;
+      border: 1px solid rgba(255, 75, 75, 0.3);
+    }
+
+    .badge-cli {
+      background: rgba(59, 130, 246, 0.15);
+      color: #60A5FA;
+      border: 1px solid rgba(59, 130, 246, 0.3);
+    }
+
+    .code-block {
+      background: #05070c;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 10px;
+      padding: 1.1rem;
+      margin: 1.2rem 0;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
+      color: #e2e8f0;
+      position: relative;
+      overflow-x: auto;
+    }
+
+    .copy-btn {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .copy-btn:hover {
+      background: rgba(255, 255, 255, 0.15);
+      color: white;
+    }
+
+    /* FAQ */
+    .faq-container {
+      max-width: 800px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .faq-item {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      transition: border-color 0.2s ease;
+    }
+
+    .faq-item:hover {
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .faq-question {
+      padding: 1.3rem 1.6rem;
+      width: 100%;
+      text-align: left;
+      background: none;
+      border: none;
+      color: var(--text);
+      font-size: 1.05rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+    }
+
+    .faq-answer {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease, padding 0.3s ease;
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      padding: 0 1.6rem;
+    }
+
+    .faq-item.active .faq-answer {
+      max-height: 200px;
+      padding-bottom: 1.4rem;
+    }
+
+    .faq-icon {
+      transition: transform 0.3s ease;
+      font-size: 1.2rem;
+    }
+
+    .faq-item.active .faq-icon {
+      transform: rotate(45deg);
+      color: var(--primary);
+    }
+
+    /* Call To Action Banner */
+    .cta-banner {
+      max-width: 1100px;
+      margin: 6rem auto 4rem;
+      background: linear-gradient(135deg, rgba(255, 75, 75, 0.18) 0%, rgba(230, 0, 35, 0.25) 50%, rgba(15, 23, 42, 0.9) 100%);
+      border: 1px solid rgba(255, 75, 75, 0.35);
+      border-radius: 24px;
+      padding: 4.5rem 2rem;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 20px 50px -10px rgba(255, 75, 75, 0.3);
+    }
+
+    .cta-banner h2 {
+      font-size: clamp(2rem, 3.8vw, 3rem);
+      font-weight: 800;
+      margin-bottom: 1rem;
+      letter-spacing: -1px;
+    }
+
+    .cta-banner p {
+      font-size: 1.15rem;
+      color: #cbd5e1;
+      max-width: 620px;
+      margin: 0 auto 2.2rem;
+    }
+
+    /* Footer */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 3rem 2rem;
+      background: rgba(5, 8, 15, 0.95);
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+
+    .footer-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1.5rem;
+    }
+
+    .footer-links {
+      display: flex;
+      gap: 1.5rem;
+    }
+
+    .footer-links a {
+      color: var(--text-muted);
+      text-decoration: none;
+      transition: color 0.2s ease;
+    }
+
+    .footer-links a:hover {
+      color: var(--text);
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .nav-links {
+        display: none;
+      }
+
+      .hero {
+        padding-top: 3.5rem;
+      }
+
+      .cta-banner {
+        padding: 3rem 1.5rem;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- ========================================================
+       CONFIGURACIÓN DE ENLACES:
+       Reemplaza el valor de data-streamlit-url con tu URL real 
+       cuando despliegues en Streamlit Cloud / HuggingFace.
+       ======================================================== -->
+
+  <!-- Barra de Navegación -->
+  <nav class="navbar">
+    <div class="nav-container">
+      <a href="#" class="brand">
+        <div class="brand-icon">📄</div>
+        <span>PDF <span>Splitter</span></span>
+      </a>
+
+      <ul class="nav-links">
+        <li><a href="#caracteristicas">Características</a></li>
+        <li><a href="#como-funciona">Cómo Funciona</a></li>
+        <li><a href="#modos">Modos de Uso</a></li>
+        <li><a href="#faq">Preguntas</a></li>
+      </ul>
+
+      <!-- BOTÓN CTA EN NAVBAR: Redirige a Streamlit -->
+      <!-- REEMPLAZA ESTA URL CON TU ENLACE REAL DE STREAMLIT -->
+      <a href="https://tu-app-de-certificados.streamlit.app" target="_blank" rel="noopener noreferrer"
+        class="btn btn-primary nav-cta-btn">
+        <span>Abrir en Streamlit</span>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+          stroke-linecap="round" stroke-linejoin="round">
+          <path d="M7 17l9.2-9.2M17 17V7H7" />
+        </svg>
+      </a>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <header class="hero">
+    <div class="hero-badge">
+      <span>✨ Extracción Inteligente & Interfaz Streamlit</span>
+    </div>
+
+    <h1>
+      Divide tus PDFs de Certificados <br>
+      <span class="gradient-text">automáticamente por Nombre</span>
+    </h1>
+
+    <p class="hero-desc">
+      Ahorra horas de trabajo manual. Sube tu archivo con cientos de diplomas o actas, el sistema extrae automáticamente
+      el nombre de cada persona, evita sobreescrituras por duplicados y genera un ZIP listo para descargar.
+    </p>
+
+    <div class="hero-actions">
+      <!-- BOTÓN PRINCIPAL APLICACIÓN STREAMLIT -->
+      <!-- REEMPLAZA ESTA URL CON TU ENLACE REAL DE STREAMLIT -->
+      <a href="https://tu-app-de-certificados.streamlit.app" target="_blank" rel="noopener noreferrer"
+        class="btn btn-primary btn-large cta-streamlit-link">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+          stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="5 3 19 12 5 21 5 3"></polygon>
+        </svg>
+        <span>Probar App en Streamlit</span>
+      </a>
+
+      <a href="#modos" class="btn btn-outline btn-large">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="16 18 22 12 16 6"></polyline>
+          <polyline points="8 6 2 12 8 18"></polyline>
+        </svg>
+        <span>Ver Script CLI en Python</span>
+      </a>
+    </div>
+
+    <!-- Live Interactive Mockup / Demostración Visual -->
+    <div class="mockup-container">
+      <div class="mockup-header">
+        <div class="mockup-dots">
+          <span class="dot-red"></span>
+          <span class="dot-yellow"></span>
+          <span class="dot-green"></span>
+        </div>
+        <div class="mockup-url">streamlit://pdf-certificate-splitter.app</div>
+        <div style="font-size: 0.8rem; color: #4ade80;">● Online</div>
+      </div>
+
+      <div class="mockup-body">
+        <div class="pdf-input-box">
+          <div class="pdf-input-icon">📑</div>
+          <div style="font-weight: 700; margin-bottom: 4px;">Certificados_Conferencias.pdf</div>
+          <div style="font-size: 0.85rem; color: var(--text-muted);">48 páginas detectadas</div>
+          <div style="margin-top: 15px;">
+            <span class="badge-success">✓ Texto legible detectado</span>
+          </div>
+        </div>
+
+        <div class="file-pipeline">
+          <div
+            style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); font-weight: 700; margin-bottom: 4px;">
+            Archivos Generados (100% Automático)
+          </div>
+
+          <div class="file-item">
+            <div class="file-info">
+              <span>📄</span>
+              <strong>Feibert_Guzman_Certificado.pdf</strong>
+            </div>
+            <span class="badge-success">Pág. 1</span>
+          </div>
+
+          <div class="file-item">
+            <div class="file-info">
+              <span>📄</span>
+              <strong>Feibert_Guzman_Panelista_2.pdf</strong>
+            </div>
+            <span class="badge-success"
+              style="background: rgba(245, 158, 11, 0.15); color: #fbbf24; border-color: rgba(245, 158, 11, 0.3);">Multirrol</span>
+          </div>
+
+          <div class="file-item">
+            <div class="file-info">
+              <span>📄</span>
+              <strong>Maria_Rodriguez_Certificado.pdf</strong>
+            </div>
+            <span class="badge-success">Pág. 3</span>
+          </div>
+
+          <div class="file-item">
+            <div class="file-info">
+              <span>📦</span>
+              <strong>Certificados_Completos.zip</strong>
+            </div>
+            <span class="badge-success"
+              style="background: rgba(59, 130, 246, 0.15); color: #93c5fd; border-color: rgba(59, 130, 246, 0.3);">Descargar</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Métricas Clave -->
+  <section class="metrics">
+    <div class="metric-card">
+      <div class="metric-value">100%</div>
+      <div class="metric-label">Procesamiento en Memoria (Privado)</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-value">&lt; 3 seg</div>
+      <div class="metric-label">Tiempo de división de 50 certificados</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-value">0</div>
+      <div class="metric-label">Archivos sobreescritos por duplicados</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-value">2 en 1</div>
+      <div class="metric-label">App Web Interactiva y CLI por Consola</div>
+    </div>
+  </section>
+
+  <!-- Características -->
+  <section class="section" id="caracteristicas">
+    <div class="section-header">
+      <div class="section-subtitle">Poder & Flexibilidad</div>
+      <h2 class="section-title">Diseñado para simplificar tu flujo de trabajo</h2>
+    </div>
+
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon-wrapper">🎯</div>
+        <h3>Detección Inteligente de Nombres</h3>
+        <p>Identifica de forma automática el nombre del participante respetando tildes, mayúsculas, la letra ñ y
+          caracteres en español sin alterar la calidad del documento original.</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon-wrapper">🛡️</div>
+        <h3>Control Avanzado de Duplicados</h3>
+        <p>¿Un participante fue ponente y además asistente? El motor detecta múltiples participaciones y numera
+          correlativamente (<code>_2.pdf</code>) o anexa el rol para evitar sobreescritura.</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon-wrapper">📦</div>
+        <h3>Empaquetado y Descarga en ZIP</h3>
+        <p>Genera en un solo clic un archivo ZIP comprimido con todos los diplomas organizados, listo para ser
+          distribuido o enviado por correo masivo.</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon-wrapper">🔒</div>
+        <h3>100% Seguro y Privado</h3>
+        <p>Tus documentos no se comparten ni se almacenan en servidores externos no autorizados. En la app web se
+          procesan en memoria volátil de sesión y se eliminan al terminar.</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon-wrapper">🧹</div>
+        <h3>Sanitización de Archivos</h3>
+        <p>Limpia caracteres prohibidos por los sistemas operativos Windows, macOS y Linux (como <code>:</code>,
+          <code>/</code>, <code>\</code>, <code>*</code>, <code>?</code>), garantizando nombres válidos.</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon-wrapper">⚡</div>
+        <h3>Ultra Rápido con PyPDF</h3>
+        <p>Construido sobre <code>pypdf</code> puro sin necesidad de binarios pesados de C ni dependencias complejas.
+          Rápido, ligero y eficiente.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Cómo Funciona -->
+  <section class="section" id="como-funciona">
+    <div class="section-header">
+      <div class="section-subtitle">Paso a Paso</div>
+      <h2 class="section-title">Tan fácil como arrastrar y descargar</h2>
+    </div>
+
+    <div class="steps-container">
+      <div class="step-card">
+        <div class="step-num">1</div>
+        <h4>Carga tu archivo PDF</h4>
+        <p>Arrastra tu archivo PDF que contiene todos los certificados continuos a la interfaz web o colócalo en la
+          carpeta del proyecto.</p>
+      </div>
+
+      <div class="step-card">
+        <div class="step-num">2</div>
+        <h4>Revisa la Vista Previa</h4>
+        <p>El algoritmo lee cada página, extrae los nombres en tiempo real y te muestra una tabla de previsualización
+          con el conteo exacto.</p>
+      </div>
+
+      <div class="step-card">
+        <div class="step-num">3</div>
+        <h4>Elige el Formato</h4>
+        <p>Personaliza si prefieres nombres con guiones bajos (<code>Juan_Perez.pdf</code>), espacios o prefijo
+          <code>Certificado_</code>.</p>
+      </div>
+
+      <div class="step-card">
+        <div class="step-num">4</div>
+        <h4>Descarga Inmediata</h4>
+        <p>Haz clic en "Descargar ZIP" o guárdalos directamente en tu disco duro si usas la opción por consola local.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Modos de Uso (Web vs CLI) -->
+  <section class="section" id="modos">
+    <div class="section-header">
+      <div class="section-subtitle">Elige tu forma preferida</div>
+      <h2 class="section-title">Interfaz Web o Script de Consola</h2>
+    </div>
+
+    <div class="modes-grid">
+      <!-- MODO 1: WEB STREAMLIT -->
+      <div class="mode-card">
+        <div>
+          <span class="mode-badge badge-web">Opción 1: Interfaz Web</span>
+          <h3 style="font-size: 1.4rem; margin-bottom: 0.8rem;">Streamlit Web App</h3>
+          <p style="color: var(--text-muted); font-size: 0.95rem;">
+            Ideal para usuarios que prefieren una experiencia interactiva y visual (estilo iLovePDF) con arrastrar y
+            soltar, estadísticas y descarga directa en ZIP.
+          </p>
+
+          <div class="code-block">
+            <button class="copy-btn" onclick="copyCode(this, 'streamlit run app.py')">Copiar</button>
+            <code>streamlit run app.py</code>
+          </div>
+        </div>
+
+        <div style="margin-top: 1.5rem;">
+          <!-- REEMPLAZA ESTA URL CON TU ENLACE REAL DE STREAMLIT -->
+          <a href="https://tu-app-de-certificados.streamlit.app" target="_blank" rel="noopener noreferrer"
+            class="btn btn-primary" style="width: 100%;">
+            <span>Lanzar Aplicación Web</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path d="M5 12h14M12 5l7 7-7 7" />
+            </svg>
+          </a>
+        </div>
+      </div>
+
+      <!-- MODO 2: SCRIPT CLI -->
+      <div class="mode-card">
+        <div>
+          <span class="mode-badge badge-cli">Opción 2: Script de Consola</span>
+          <h3 style="font-size: 1.4rem; margin-bottom: 0.8rem;">Python Script (CLI)</h3>
+          <p style="color: var(--text-muted); font-size: 0.95rem;">
+            Perfecto para automatizar procesos masivos, tareas programadas (crons) o procesamiento por lotes local sin
+            interfaz gráfica.
+          </p>
+
+          <div class="code-block">
+            <button class="copy-btn"
+              onclick="copyCode(this, 'python dividir_pdf.py &quot;ruta/archivo.pdf&quot;')">Copiar</button>
+            <code>python dividir_pdf.py "ruta/archivo.pdf"</code>
+          </div>
+        </div>
+
+        <div style="margin-top: 1.5rem;">
+          <a href="https://github.com" target="_blank" rel="noopener noreferrer" class="btn btn-outline"
+            style="width: 100%;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+              <path
+                d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
+            </svg>
+            <span>Ver Código en GitHub</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Preguntas Frecuentes -->
+  <section class="section" id="faq">
+    <div class="section-header">
+      <div class="section-subtitle">Dudas Comunes</div>
+      <h2 class="section-title">Preguntas Frecuentes</h2>
+    </div>
+
+    <div class="faq-container">
+      <div class="faq-item">
+        <button class="faq-question">
+          <span>¿Mis archivos y nombres quedan guardados en algún servidor?</span>
+          <span class="faq-icon">+</span>
+        </button>
+        <div class="faq-answer">
+          No. La aplicación procesa los archivos PDF completamente en memoria RAM durante la sesión activa. Una vez
+          descargas el ZIP o cierras el navegador, los datos temporales se descartan inmediatamente.
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-question">
+          <span>¿Qué sucede si una persona tiene más de un certificado?</span>
+          <span class="faq-icon">+</span>
+        </button>
+        <div class="faq-answer">
+          El sistema cuenta con un algoritmo de resolución de colisiones. Si una persona tiene varios certificados (por
+          ejemplo, asistió a varias charlas o tuvo múltiples roles), el sistema no sobreescribe el anterior, sino que
+          añade un número correlativo (ej. <code>_2.pdf</code>) o el rol extraído automáticamente.
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-question">
+          <span>¿Qué librerías se requieren para ejecutarlo en local?</span>
+          <span class="faq-icon">+</span>
+        </button>
+        <div class="faq-answer">
+          Solo requiere Python 3.8+ y dos librerías principales: <code>streamlit</code> y <code>pypdf</code>. Puedes
+          instalarlas ejecutando: <code>pip install streamlit pypdf</code>.
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-question">
+          <span>¿Funciona con certificados que tienen acentos, tildes y la letra Ñ?</span>
+          <span class="faq-icon">+</span>
+        </button>
+        <div class="faq-answer">
+          Sí. Todo el procesamiento se realiza en UTF-8 y preserva íntegramente los caracteres especiales en español.
+          Además, limpia caracteres no permitidos en sistemas de archivos (como <code>: / \ * ? &lt; &gt; |</code>).
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Banner CTA Final -->
+  <div class="cta-banner">
+    <h2>Comienza a dividir certificados en segundos</h2>
+    <p>Accede a la herramienta web en vivo o clona el repositorio para usarlo en tu propio entorno sin complicaciones.
+    </p>
+
+    <!-- BOTÓN FINAL A STREAMLIT -->
+    <!-- REEMPLAZA ESTA URL CON TU ENLACE REAL DE STREAMLIT -->
+    <a href="https://tu-app-de-certificados.streamlit.app" target="_blank" rel="noopener noreferrer"
+      class="btn btn-primary btn-large">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <polygon points="5 3 19 12 5 21 5 3"></polygon>
+      </svg>
+      <span>Abrir Aplicación en Streamlit</span>
+    </a>
+  </div>
+
+  <!-- Footer -->
+  <footer>
+    <div class="footer-container">
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span style="font-size: 1.2rem;">📄</span>
+        <strong>Divisor de Certificados PDF</strong>
+        <span>© 2026</span>
+      </div>
+
+      <div class="footer-links">
+        <a href="#caracteristicas">Características</a>
+        <a href="#modos">Opciones</a>
+        <a href="#faq">FAQ</a>
+        <a href="https://github.com" target="_blank" rel="noopener noreferrer">GitHub</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Script interactivo mínimo para FAQ y copiado -->
+  <script>
+    // Toggle FAQ Accordion
+    document.querySelectorAll('.faq-question').forEach(button => {
+      button.addEventListener('click', () => {
+        const item = button.parentElement;
+        item.classList.toggle('active');
+      });
+    });
+
+    // Función para copiar comandos de consola
+    function copyCode(btn, text) {
+      navigator.clipboard.writeText(text).then(() => {
+        const originalText = btn.textContent;
+        btn.textContent = '¡Copiado!';
+        btn.style.color = '#4ade80';
+        setTimeout(() => {
+          btn.textContent = originalText;
+          btn.style.color = '';
+        }, 2000);
+      });
+    }
+  </script>
+</body>
+
+</html>
