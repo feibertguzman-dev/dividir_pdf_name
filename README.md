@@ -21,9 +21,9 @@
 
 | Recurso | Enlace | Estado |
 | :--- | :--- | :--- |
-| 🚀 **Landing Page (GitHub Pages)** | [Ver Landing Page](https://tu-usuario.github.io/tu-repositorio/) *(al desplegar en GitHub Pages)* | 🟢 Listo (`index.html` en raíz) |
-| ⚡ **Aplicación Web en Streamlit** | [Abrir App en Streamlit](https://tu-app-de-certificados.streamlit.app) *(URL tentativa)* | 🟡 Reemplazar con tu URL real |
-| 💻 **Repositorio de Código** | [GitHub Repository](https://github.com) | 📁 Código Fuente |
+| 🚀 **Landing Page (GitHub Pages)** | [Ver Landing Page](https://feibertguzman-dev.github.io/dividir_pdf_name/) *(al desplegar en GitHub Pages)* | 🟢 Listo (`index.html` en raíz) |
+| ⚡ **Aplicación Web en Streamlit** | [Abrir App en Streamlit](https://dividirpdf.streamlit.app/) *(URL tentativa)* | 🟡 Reemplazar con tu URL real |
+| 💻 **Repositorio de Código** | [GitHub Repository](https://github.com/feibertguzman-dev/dividir_pdf_name) | 📁 Código Fuente |
 
 > [!NOTE]
 > Puedes actualizar la URL de Streamlit directamente en `index.html` buscando la etiqueta `data-streamlit-url` o los enlaces con la clase `cta-streamlit-link`.
